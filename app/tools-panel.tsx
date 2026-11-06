@@ -59,7 +59,8 @@ export default function ToolsPanel(){
   const chosen=choices.find((m:any)=>m.school_id===(nextSchoolId||schoolId))||choices[0];
   setSchoolId(chosen.school_id);setAccountRole(chosen.role);
   setStore(prev=>({...prev,school:chosen.schoolName}));
-  const {data:staffRows}=await supabase.from('school_memberships').select('user_id,role,status').eq('school_id',chosen.school_id).eq('status','active');setSchoolMembers(staffRows||[]);\n  const [recordResult,auditResult]=await Promise.all([
+  const {data:staffRows}=await supabase.from('school_memberships').select('user_id,role,status').eq('school_id',chosen.school_id).eq('status','active');setSchoolMembers(staffRows||[]);
+  const [recordResult,auditResult]=await Promise.all([
    supabase.from('school_module_records').select('id,module_key,title,payload,status,created_at').eq('school_id',chosen.school_id).order('created_at',{ascending:false}).limit(1000),
    supabase.from('audit_logs').select('id,event_type,target_type,target_id,details,created_at,actor_user_id').eq('school_id',chosen.school_id).order('created_at',{ascending:false}).limit(200)
   ]);
