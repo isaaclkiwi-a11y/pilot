@@ -32,7 +32,10 @@ export default function StudentsPage() {
     { id: "10024", name: "Sofia Garcia", grade: "12th", homeroom: "Library" },
     { id: "10025", name: "Ethan Brooks", grade: "10th", homeroom: "Room 205" },
   ]);
-  const [search, setSearch] = useState("");\n  const [loaded, setLoaded] = useState(false);\n  useEffect(() => { try { const saved = localStorage.getItem("pilot-demo-roster"); if (saved) setStudents(JSON.parse(saved)); } catch {} setLoaded(true); }, []);\n  useEffect(() => { if (loaded) localStorage.setItem("pilot-demo-roster", JSON.stringify(students)); }, [students, loaded]);
+  const [search, setSearch] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { try { const saved = localStorage.getItem("pilot-demo-roster"); if (saved) setStudents(JSON.parse(saved)); } catch {} setLoaded(true); }, []);
+  useEffect(() => { if (loaded) localStorage.setItem("pilot-demo-roster", JSON.stringify(students)); }, [students, loaded]);
   const [csvRows, setCsvRows] = useState<string[][]>([]);
   const [fileName, setFileName] = useState("");
   const [columns, setColumns] = useState({ name: "", id: "", grade: "", homeroom: "" });
