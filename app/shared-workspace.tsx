@@ -2,7 +2,7 @@
 
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {usePathname,useRouter} from 'next/navigation';
-import {Activity,BookOpen,CalendarDays,Check,ClipboardCheck,DoorOpen,Download,GraduationCap,LayoutDashboard,LogOut,Plus,RefreshCw,Settings,ShieldCheck,Trash2,Users,Upload,Command,BarChart3} from 'lucide-react';
+import {Activity,BookOpen,CalendarDays,Check,ClipboardCheck,DoorOpen,Download,GraduationCap,LayoutDashboard,LogOut,Plus,RefreshCw,Settings,ShieldCheck,Trash2,Users,Upload,Command,BarChart3,Menu,X,Search,ChevronRight} from 'lucide-react';
 import {createClient} from '@/lib/supabase/client';
 import LivePassCenter from './live-pass-center';
 import ToolsPanel from './tools-panel';
@@ -65,6 +65,10 @@ export default function SharedWorkspace({initialSection}:{initialSection?:Sectio
  const [selectedClass,setSelectedClass]=useState('');
  const [selectedStudent,setSelectedStudent]=useState('');
  const [selectedStaff,setSelectedStaff]=useState('');
+ const [mobileNavOpen,setMobileNavOpen]=useState(false);
+ const [navSearch,setNavSearch]=useState('');
+ useEffect(()=>{setMobileNavOpen(false);setNavSearch('');},[pathname]);
+ const navResults=sections.filter(s=>s.label.toLowerCase().includes(navSearch.toLowerCase()));
 
  const schoolToday=dateForSchool(school?.timezone||'America/Chicago');
  const isAdmin=['owner','school_admin','staff_admin'].includes(role);
@@ -207,25 +211,26 @@ export default function SharedWorkspace({initialSection}:{initialSection?:Sectio
   const text=rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\n');
   const url=URL.createObjectURL(new Blob([text],{type:'text/csv'}));const a=document.createElement('a');a.href=url;a.download='pilot-student-roster-'+schoolToday+'.csv';a.click();URL.revokeObjectURL(url);
  };
- const heading=(subtitle:string,action?:React.ReactNode)=><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,flexWrap:'wrap',marginBottom:18}}><div><span style={{fontSize:10,fontWeight:850,letterSpacing:1.1,color:'#6478ca'}}>{(school?.name||'PILOT').toUpperCase()} · {role.replaceAll('_',' ').toUpperCase()}</span><h1 style={{fontSize:30,letterSpacing:-.9,margin:'6px 0 4px',color:'#1c2940'}}>{current==='overview'?'Your school at a glance':title}</h1><p style={{margin:0,fontSize:13,color:'#7c8799'}}>{subtitle}</p></div>{action}</div>;
+ const heading=(subtitle:string,action?:React.ReactNode)=><div className="pilot-page-heading"><div><span className="pilot-eyebrow">{(school?.name||'PILOT').toUpperCase()} <span>•</span> {role.replaceAll('_',' ').toUpperCase()}</span><h1>{current==='overview'?'Your school at a glance':title}</h1><p>{subtitle}</p></div>{action&&<div className="pilot-heading-actions">{action}</div>}</div>;
  const tableHead=(labels:string[])=><thead><tr>{labels.map(x=><th key={x} style={{textAlign:'left',fontSize:10,letterSpacing:.7,color:'#8b95a6',padding:'11px 10px',borderBottom:'1px solid #edf0f4',whiteSpace:'nowrap'}}>{x}</th>)}</tr></thead>;
  const cell:React.CSSProperties={padding:'12px 10px',fontSize:12,color:'#56637a',borderBottom:'1px solid #f0f2f6'};
  const filterInput=<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search records…" style={{...inputCss,maxWidth:320,marginBottom:13}}/>;
 
- return <main style={{minHeight:'100vh',display:'flex',background:'#f5f7fb',color:'#1e2a40',fontFamily:'Inter,ui-sans-serif,system-ui'}}>
-  <aside style={{width:250,flexShrink:0,background:'#fff',borderRight:'1px solid #e8ebf2',padding:18,display:'flex',flexDirection:'column',gap:18}}>
-   <div style={{display:'flex',alignItems:'center',gap:9,fontSize:23,fontWeight:900,letterSpacing:-1,color:'#273553'}}><span style={{width:31,height:31,borderRadius:10,display:'grid',placeItems:'center',background:'#536ac8',color:'#fff'}}><Command size={17}/></span>pilot<span style={{color:'#536ac8'}}>.</span></div>
-   <div style={{padding:12,border:'1px solid #e8ebf2',borderRadius:11,display:'flex',gap:9,alignItems:'center'}}><span style={{width:29,height:29,borderRadius:8,background:'#eef1fc',color:'#536ac8',display:'grid',placeItems:'center'}}><ShieldCheck size={16}/></span><div style={{minWidth:0}}><b style={{display:'block',fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{school?.name||'School workspace'}</b><small style={{color:'#8994a6',fontSize:10}}>Shared school account</small></div></div>
-   <nav style={{display:'grid',gap:15,overflowY:'auto'}}>{['WORKSPACE','SCHOOL','INSIGHTS'].map(group=><div key={group}><small style={{fontSize:9,fontWeight:850,letterSpacing:1.2,color:'#9aa3b2',paddingLeft:9}}>{group}</small><div style={{display:'grid',gap:3,marginTop:7}}>{sections.filter(x=>x.group===group).map(item=><button key={item.id} onClick={()=>{router.push(item.id==='overview'?'/app':'/'+item.id);setQuery('');setShowForm('');}} style={{display:'flex',alignItems:'center',gap:10,border:0,borderRadius:9,padding:'10px 11px',background:current===item.id?'#eef1fc':'transparent',color:current===item.id?'#465ebd':'#66738a',fontSize:12,fontWeight:current===item.id?800:650,textAlign:'left',cursor:'pointer'}}><item.icon size={16}/>{item.label}</button>)}</div></div>)}</nav>
-   <div style={{marginTop:'auto',padding:12,borderRadius:11,background:'#f5f7fc',fontSize:11,color:'#69758b'}}><b style={{display:'flex',gap:7,alignItems:'center',color:'#465ebd'}}><ShieldCheck size={15}/> Shared data enabled</b><p style={{margin:'6px 0 0',lineHeight:1.5}}>Roster, attendance, schedule, and announcements sync through the school database.</p></div>
-   <button onClick={async()=>{await db.auth.signOut();router.replace('/login');router.refresh();}} style={{...buttonCss(),justifyContent:'flex-start'}}><LogOut size={15}/> Sign out</button>
-  </aside>
-  <section style={{flex:1,minWidth:0,padding:'25px clamp(16px,3vw,38px)',maxWidth:1600,margin:'0 auto',width:'100%'}}>
-   <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,marginBottom:23}}><div style={{fontSize:12,color:'#8993a4'}}>Workspace <b style={{margin:'0 8px',color:'#c3c9d3'}}>/</b> <strong style={{color:'#4b5870'}}>{title}</strong></div><div style={{display:'flex',alignItems:'center',gap:10,fontSize:11,color:'#7e899b'}}><span>{new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}</span><span style={{width:30,height:30,borderRadius:50,background:'#e9edfa',color:'#536ac8',display:'grid',placeItems:'center',fontWeight:850}}>{role.slice(0,1).toUpperCase()}</span></div></header>
-   {error&&<div role="alert" style={{padding:12,borderRadius:10,background:'#fff0ef',border:'1px solid #f2d5d1',color:'#a73c33',fontSize:12,marginBottom:14}}>{error}</div>}
-   {notice&&<div role="status" style={{padding:12,borderRadius:10,background:'#edf8f1',border:'1px solid #d5eddd',color:'#28734c',fontSize:12,marginBottom:14}}>{notice}</div>}
-   {loading?<div style={{...cardCss,padding:50,textAlign:'center',color:'#8792a4'}}>Loading your school's shared workspace…</div>:!schoolId?<div style={cardCss}>No active school membership was found. Contact a school administrator.</div>:
-   <>
+ return <div className="pilot-shell">
+ {mobileNavOpen&&<button className="pilot-mobile-scrim" aria-label="Close navigation" onClick={()=>setMobileNavOpen(false)}/>}
+ <aside className={`pilot-sidebar ${mobileNavOpen?'is-open':''}`}>
+  <div className="pilot-brand"><span className="pilot-brand-mark"><Command size={18}/></span><span>pilot<span className="pilot-brand-period">.</span><small>SCHOOL OPERATIONS</small></span><button className="pilot-mobile-close" onClick={()=>setMobileNavOpen(false)} aria-label="Close menu"><X size={18}/></button></div>
+  <div className="pilot-school-switch"><span className="pilot-school-icon"><ShieldCheck size={17}/></span><span><b>{school?.name||'School workspace'}</b><small>School workspace</small></span><ChevronRight size={15}/></div>
+  <div className="pilot-nav-caption">YOUR WORKSPACE</div>
+  <nav className="pilot-nav" aria-label="Main navigation">{['WORKSPACE','SCHOOL','INSIGHTS'].map(group=><div className="pilot-nav-group" key={group}><small>{group}</small>{sections.filter(x=>x.group===group).map(item=><button key={item.id} className={`pilot-nav-link ${current===item.id?'is-active':''}`} aria-current={current===item.id?'page':undefined} onClick={()=>{router.push(item.id==='overview'?'/app':'/'+item.id);setQuery('');setShowForm('');setMobileNavOpen(false);}}><item.icon size={17}/><span>{item.label}</span>{current===item.id&&<i/>}</button>)}</div>)}</nav>
+  <div className="pilot-sidebar-bottom"><div className="pilot-sync-card"><span className="pilot-sync-indicator"/><div><b>Connected workspace</b><small>School data sync is enabled</small></div></div><div className="pilot-account"><span className="pilot-avatar">{role.slice(0,1).toUpperCase()||'P'}</span><div><b>{role.replaceAll('_',' ')||'School member'}</b><small>Signed in account</small></div><button onClick={async()=>{await db.auth.signOut();router.replace('/login');router.refresh();}} aria-label="Sign out" title="Sign out"><LogOut size={16}/></button></div></div>
+ </aside>
+ <main className="pilot-main">
+  <header className="pilot-topbar"><div className="pilot-topbar-left"><button className="pilot-menu-button" onClick={()=>setMobileNavOpen(true)} aria-label="Open navigation"><Menu size={19}/></button><div className="pilot-breadcrumb"><span>Workspace</span><ChevronRight size={14}/><b>{title}</b></div></div>
+   <div className="pilot-topbar-right"><label className="pilot-nav-search"><Search size={16}/><input aria-label="Find a page" placeholder="Jump to a page…" value={navSearch} onChange={e=>setNavSearch(e.target.value)}/><kbd>⌘ K</kbd></label>{navSearch&&<div className="pilot-search-results">{navResults.length?navResults.map(item=><button key={item.id} onClick={()=>{router.push(item.id==='overview'?'/app':'/'+item.id);setNavSearch('');}}><item.icon size={15}/>{item.label}<ChevronRight size={13}/></button>):<span>No matching pages</span>}</div>}<span className="pilot-top-date">{new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}</span><span className="pilot-top-avatar">{role.slice(0,1).toUpperCase()||'P'}</span></div>
+  </header>
+  <div className="pilot-content">{error&&<div role="alert" className="pilot-alert pilot-alert-error">{error}</div>}{notice&&<div role="status" className="pilot-alert pilot-alert-success"><Check size={15}/>{notice}</div>}
+   {loading?<div className="pilot-loading"><span className="pilot-spinner"/><b>Loading your school workspace</b><small>Getting everything ready…</small></div>:!schoolId?<div className="pilot-empty-state">No active school membership was found. Contact a school administrator.</div>:<div className="pilot-page-enter" key={current}>
    {current==='overview'&&<>{heading('A live view of the records shared across your school.')}<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))',gap:12,marginBottom:17}}>{[
     ['Active students',activeStudents.length],['Staff profiles',staff.filter(x=>x.status==='active').length],['Classes',classes.filter(x=>x.status==='active').length],['Today present',todayAttendance.filter(x=>x.status==='present').length],['Announcements',announcements.filter(x=>x.status==='published').length]
    ].map(([label,value])=><div key={String(label)} style={cardCss}><small style={{color:'#8490a2'}}>{label}</small><b style={{display:'block',fontSize:28,marginTop:7,fontVariantNumeric:'tabular-nums'}}>{value}</b></div>)}</div><LivePassCenter/><div style={{...cardCss,marginTop:15}}><h2 style={{fontSize:16,margin:'0 0 12px'}}>Upcoming school events</h2>{events.filter(e=>e.status==='scheduled'&&new Date(e.starts_at)>=new Date()).slice(0,5).map(e=><div key={e.id} style={{padding:'10px 0',borderTop:'1px solid #eff1f5',display:'flex',justifyContent:'space-between',gap:12}}><b style={{fontSize:12}}>{e.title}</b><span style={{fontSize:11,color:'#778398'}}>{dateLabel(e.starts_at)}</span></div>)}{!events.length&&<p style={{color:'#8993a4',fontSize:12}}>No upcoming events have been added.</p>}</div></>}
@@ -244,6 +249,8 @@ export default function SharedWorkspace({initialSection}:{initialSection?:Sectio
    {current==='tools'&&<ToolsPanel/>}
    </>
    }
-  </section>
- </main>;
+   </div>}
+  </div>
+ </main>
+ </div>;
 }
