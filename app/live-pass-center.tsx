@@ -29,6 +29,7 @@ export default function LivePassCenter(){
  const [role,setRole]=useState('');
  const [schoolId,setSchoolId]=useState('');
  const [serverOffset,setServerOffset]=useState(0);
+ const [actorId,setActorId]=useState('');
  const [now,setNow]=useState(Date.now());
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState('');
@@ -48,6 +49,7 @@ export default function LivePassCenter(){
   const requestStarted=Date.now();
   const {data:{user},error:userError}=await db.auth.getUser();
   if(userError||!user){setError('Your session could not be verified. Please sign in again.');setLoading(false);return;}
+  setActorId(user.id);
   const [monitor,time,members,studentList]=await Promise.all([
    db.rpc('get_school_hall_pass_monitor'),
    db.rpc('get_pilot_server_time'),
@@ -97,7 +99,7 @@ export default function LivePassCenter(){
  }
  async function setStatus(pass:PassRow,status:'active'|'denied'|'returned'){
   setBusy(pass.pass_id);setError('');setNotice('');
-  const update=status==='returned'?{status,returned_at:new Date().toISOString(),ended_at:new Date().toISOString(),ended_by:userId,end_reason:'Ended by staff'}:{status};
+  const update=status==='returned'?{status,returned_at:new Date().toISOString(),ended_at:new Date().toISOString(),ended_by:actorId,end_reason:'Ended by staff'}:{status};
   const {error}=await db.from('hall_passes').update(update).eq('id',pass.pass_id);
   if(error)setError(error.message);
   else{setNotice(status==='active'?'Pass approved. Its shared countdown has started.':status==='returned'?'Pass ended.':'Pass denied.');await load();}
