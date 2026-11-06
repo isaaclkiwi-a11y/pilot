@@ -251,7 +251,6 @@ export default function SharedWorkspace({initialSection}:{initialSection?:Sectio
    {current==='settings'&&<>{heading('Manage your school name and time zone.')}<form onSubmit={saveSchool} style={{...cardCss,maxWidth:620,display:'grid',gap:13}}><label style={fieldCss}>School name<input value={form.schoolName??school?.name??''} onChange={e=>updateForm('schoolName',e.target.value)} disabled={!isAdmin} style={inputCss}/></label><label style={fieldCss}>Time zone<select value={form.timezone??school?.timezone??'America/Chicago'} onChange={e=>updateForm('timezone',e.target.value)} disabled={!isAdmin} style={inputCss}>{['America/Chicago','America/New_York','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','Pacific/Honolulu'].map(x=><option key={x}>{x}</option>)}</select></label>{isAdmin?<button disabled={busy} style={{...buttonCss(true),justifySelf:'start'}}>Save school settings</button>:<p style={{fontSize:11,color:'#8792a3'}}>Only school administrators can edit these settings.</p>}</form></>}
    {current==='tools'&&<ToolsPanel/>}
    </>
-   }
    </div>}
   </div>
  </main>
