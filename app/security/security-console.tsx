@@ -2,8 +2,7 @@
 
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {createClient} from '@/lib/supabase/client';
-import {Activity,AlertCircle,ArrowLeft,CheckCircle2,Clock3,DoorOpen,RefreshCw,Search,ShieldCheck,UserRound} from 'lucide-react';
-import Link from 'next/link';
+import {Activity,AlertCircle,CheckCircle2,Clock3,DoorOpen,LogOut,RefreshCw,Search,ShieldCheck,UserRound} from 'lucide-react';
 
 type PassRow={
  pass_id:string;
@@ -115,7 +114,7 @@ export default function SecurityConsole({schoolName,role}:{schoolName:string;rol
      </table></div>}
    </section>
    <footer style={{display:'flex',alignItems:'center',gap:7,color:'#8a94a5',fontSize:11,marginTop:16}}><UserRound size={14}/> Security access is limited to school-wide pass oversight. Student records and administrative settings remain restricted.</footer>
-   <div style={{marginTop:16}}><Link href="/login" style={{color:'#65718a',fontSize:12,textDecoration:'none'}}><ArrowLeft size={14} style={{verticalAlign:'middle',marginRight:6}}/> Sign in with another account</Link></div>
+   <div style={{marginTop:16}}><button onClick={async()=>{await db.auth.signOut();window.location.assign('/login');}} style={{display:'inline-flex',alignItems:'center',gap:7,border:0,background:'transparent',padding:0,color:'#65718a',fontSize:12}}><LogOut size={14}/> Sign out</button></div>
   </div>
  </main>;
 }
