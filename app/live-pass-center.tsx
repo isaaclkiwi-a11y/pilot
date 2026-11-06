@@ -45,15 +45,18 @@ export default function LivePassCenter(){
 
  const load=useCallback(async()=>{
   setError('');
+  const requestStarted=Date.now();
+  const {data:{user},error:userError}=await db.auth.getUser();
+  if(userError||!user){setError('Your session could not be verified. Please sign in again.');setLoading(false);return;}
   const [monitor,time,members,studentList]=await Promise.all([
    db.rpc('get_school_hall_pass_monitor'),
    db.rpc('get_pilot_server_time'),
-   db.from('school_memberships').select('school_id,role').eq('status','active').limit(1).maybeSingle(),
+   db.from('school_memberships').select('school_id,role').eq('user_id',user.id).eq('status','active').limit(1).maybeSingle(),
    db.rpc('get_school_pass_students')
   ]);
   if(members.error||!members.data){setError(members.error?.message||'No active school membership was found.');setLoading(false);return;}
   setSchoolId(members.data.school_id);setRole(members.data.role);
-  if(time.data)setServerOffset(new Date(time.data).getTime()-Date.now());
+  if(time.data)setServerOffset(new Date(time.data).getTime()-((requestStarted+Date.now())/2));
   if(monitor.error){setError(monitor.error.message);setPasses([]);}
   else setPasses((monitor.data||[]) as PassRow[]);
   if(studentList.error){setError(studentList.error.message);}

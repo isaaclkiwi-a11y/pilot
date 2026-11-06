@@ -40,10 +40,11 @@ export default function SecurityConsole({schoolName,role}:{schoolName:string;rol
 
  const load=useCallback(async()=>{
   setError('');
+  const requestStarted=Date.now();
   const [monitor,time]=await Promise.all([db.rpc('get_school_hall_pass_monitor'),db.rpc('get_pilot_server_time')]);
   if(monitor.error){setError(monitor.error.message);setPasses([]);}
   else setPasses((monitor.data||[]) as PassRow[]);
-  if(time.data)setServerOffset(new Date(time.data).getTime()-Date.now());
+  if(time.data)setServerOffset(new Date(time.data).getTime()-((requestStarted+Date.now())/2));
   setLoading(false);
   setRefreshing(false);
  },[db]);
