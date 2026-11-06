@@ -130,9 +130,10 @@ export default function SharedWorkspace({initialSection}:{initialSection?:Sectio
  const setAttendanceStatus=async(studentId:string,status:string)=>{
   setBusy(true);setError('');
   const existing=attendance.find(a=>a.student_id===studentId&&a.attendance_date===schoolToday);
-  const payload={school_id:schoolId,student_id:studentId,attendance_date:schoolToday,status,note:existing?.note||null,created_by:existing?undefined:userId,updated_by:userId};
-  const {error}=await db.from('attendance_records').upsert(payload,{onConflict:'school_id,student_id,attendance_date'});
-  if(error)setError(error.message);else{notify('Attendance saved for the school.');await load();}
+  const result=existing
+   ?await db.from('attendance_records').update({status,note:existing.note||null,updated_by:userId}).eq('id',existing.id)
+   :await db.from('attendance_records').insert({school_id:schoolId,student_id:studentId,attendance_date:schoolToday,status,note:null,created_by:userId,updated_by:userId});
+  if(result.error)setError(result.error.message);else{notify('Attendance saved for the school.');await load();}
   setBusy(false);
  };
  const addStudent=async(e:React.FormEvent)=>{
