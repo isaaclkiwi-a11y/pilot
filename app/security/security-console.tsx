@@ -15,11 +15,15 @@ type PassRow={
  status:'pending'|'active'|'returned'|'denied'|'cancelled';
  requested_at:string;
  expected_duration_minutes:number;
+ expires_at:string|null;
+ display_status:'pending'|'active'|'overdue'|'returned'|'denied'|'cancelled';
+ server_now:string;
  ended_at:string|null;
  end_reason:string|null;
 };
 const dateTime=(value:string)=>new Date(value).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-const isOverdue=(pass:PassRow)=>pass.status==='active'&&Date.now()>new Date(pass.requested_at).getTime()+pass.expected_duration_minutes*60_000;
+const isOverdue=(pass:PassRow,now:number)=>pass.status==='active'&&!!pass.expires_at&&now>=new Date(pass.expires_at).getTime();
+const countdown=(pass:PassRow,now:number)=>{if(pass.status!=='active'||!pass.expires_at)return '—';const diff=new Date(pass.expires_at).getTime()-now;if(diff<=0){const n=Math.floor(-diff/1000);return 'OVERDUE +'+String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');}const n=Math.floor(diff/1000),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h? h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'):String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');};
 
 export default function SecurityConsole({schoolName,role}:{schoolName:string;role:string}){
  const db=useMemo(()=>createClient(),[]);
@@ -31,22 +35,28 @@ export default function SecurityConsole({schoolName,role}:{schoolName:string;rol
  const [filter,setFilter]=useState('active');
  const [error,setError]=useState('');
  const [notice,setNotice]=useState('');
+ const [serverOffset,setServerOffset]=useState(0);
+ const [now,setNow]=useState(Date.now());
 
  const load=useCallback(async()=>{
   setError('');
-  const {data,error}=await db.rpc('security_list_school_passes');
-  if(error){setError(error.message);setPasses([]);}
-  else setPasses((data||[]) as PassRow[]);
+  const [monitor,time]=await Promise.all([db.rpc('get_school_hall_pass_monitor'),db.rpc('get_pilot_server_time')]);
+  if(monitor.error){setError(monitor.error.message);setPasses([]);}
+  else setPasses((monitor.data||[]) as PassRow[]);
+  if(time.data)setServerOffset(new Date(time.data).getTime()-Date.now());
   setLoading(false);
   setRefreshing(false);
  },[db]);
 
  useEffect(()=>{void load();},[load]);
+ useEffect(()=>{const id=window.setInterval(()=>setNow(Date.now()),250);return()=>window.clearInterval(id);},[]);
+ useEffect(()=>{const channel=db.channel('pilot-security-pass-live').on('postgres_changes',{event:'*',schema:'public',table:'hall_passes'},()=>{void load();}).subscribe();const fallback=window.setInterval(()=>{void load();},30000);return()=>{void window.clearInterval(fallback);void db.removeChannel(channel);};},[db,load]);
 
- const active=passes.filter(p=>p.status==='active');
- const overdue=active.filter(isOverdue);
+ const serverNow=now+serverOffset;
+ const active=passes.filter(p=>p.status==='active'&&!isOverdue(p,serverNow));
+ const overdue=passes.filter(p=>isOverdue(p,serverNow));
  const visible=passes.filter(p=>{
-  const status=isOverdue(p)?'overdue':p.status;
+  const status=isOverdue(p,serverNow)?'overdue':p.status;
   const matchesStatus=filter==='all'||(filter==='active'&&(p.status==='active'||status==='overdue'))||status===filter;
   const matchesQuery=[p.student_name,p.student_number,p.student_id,p.destination,p.origin,p.reason].join(' ').toLowerCase().includes(query.toLowerCase());
   return matchesStatus&&matchesQuery;
@@ -102,13 +112,14 @@ export default function SecurityConsole({schoolName,role}:{schoolName:string;rol
     {notice&&<div role="status" style={{background:'#eef8f2',color:'#28734c',border:'1px solid #d6eddf',borderRadius:9,padding:12,marginBottom:12}}>{notice}</div>}
     {loading?<div style={{padding:35,textAlign:'center',color:'#8993a4'}}>Loading school passes…</div>:visible.length===0?<div style={{padding:38,textAlign:'center',color:'#8993a4'}}><Activity size={22}/><p>No passes match this view.</p></div>:
      <div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',textAlign:'left',minWidth:780}}>
-      <thead><tr>{['STUDENT','FROM','DESTINATION','REQUESTED','STATUS','ACTION'].map(x=><th key={x} style={{padding:'11px 9px',fontSize:10,letterSpacing:.7,color:'#8993a4',borderBottom:'1px solid #edf0f4'}}>{x}</th>)}</tr></thead>
+      <thead><tr>{['STUDENT','FROM','DESTINATION','REQUESTED','COUNTDOWN','STATUS','ACTION'].map(x=><th key={x} style={{padding:'11px 9px',fontSize:10,letterSpacing:.7,color:'#8993a4',borderBottom:'1px solid #edf0f4'}}>{x}</th>)}</tr></thead>
       <tbody>{visible.map(p=><tr key={p.pass_id}>
        <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}><strong style={{display:'block',fontSize:12}}>{p.student_name}</strong><small style={{color:'#8b95a5'}}>{p.student_number||p.student_id}</small></td>
        <td style={{padding:'13px 9px',fontSize:12,color:'#657188',borderBottom:'1px solid #f0f2f6'}}>{p.origin||'Not listed'}</td>
        <td style={{padding:'13px 9px',fontSize:12,color:'#33415b',borderBottom:'1px solid #f0f2f6'}}><strong>{p.destination}</strong><small style={{display:'block',color:'#8b95a5',marginTop:3}}>{p.reason||'No reason provided'}</small></td>
        <td style={{padding:'13px 9px',fontSize:11,color:'#657188',borderBottom:'1px solid #f0f2f6'}}>{dateTime(p.requested_at)}</td>
-       <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}><span style={{display:'inline-flex',padding:'5px 8px',borderRadius:6,fontSize:10,fontWeight:700,background:isOverdue(p)?'#fff0ed':p.status==='active'?'#edf8f1':'#f1f3f7',color:isOverdue(p)?'#c15d4e':p.status==='active'?'#3b9467':'#6f7a8e'}}>{isOverdue(p)?'Overdue':p.status}</span></td>
+       <td style={{padding:'13px 9px',fontSize:12,fontWeight:800,fontVariantNumeric:'tabular-nums',color:isOverdue(p,serverNow)?'#c15d4e':'#327c58',borderBottom:'1px solid #f0f2f6'}}>{countdown(p,serverNow)}</td>
+       <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}><span style={{display:'inline-flex',padding:'5px 8px',borderRadius:6,fontSize:10,fontWeight:700,background:isOverdue(p,serverNow)?'#fff0ed':p.status==='active'?'#edf8f1':'#f1f3f7',color:isOverdue(p,serverNow)?'#c15d4e':p.status==='active'?'#3b9467':'#6f7a8e'}}>{isOverdue(p,serverNow)?'Overdue':p.status}</span></td>
        <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}>{p.status==='active'?<button onClick={()=>void endPass(p)} disabled={busyId===p.pass_id} style={{border:0,borderRadius:7,padding:'7px 10px',background:'#fff0ee',color:'#b64d42',fontSize:11,fontWeight:700,opacity:busyId===p.pass_id ? 0.5 : 1}}>{busyId===p.pass_id?'Ending…':'End pass'}</button>:<span style={{color:'#a0a8b5',fontSize:10}}>No action</span>}</td>
       </tr>)}</tbody>
      </table></div>}
