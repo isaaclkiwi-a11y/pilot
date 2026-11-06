@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {usePathname,useRouter} from 'next/navigation';
 import {Activity,BookOpen,CalendarDays,Check,ClipboardCheck,DoorOpen,Download,GraduationCap,LayoutDashboard,LogOut,Plus,RefreshCw,Settings,ShieldCheck,Trash2,Users,Upload,Command,BarChart3,Menu,X,Search,ChevronRight} from 'lucide-react';
 import {createClient} from '@/lib/supabase/client';
@@ -67,7 +67,9 @@ export default function SharedWorkspace({initialSection}:{initialSection?:Sectio
  const [selectedStaff,setSelectedStaff]=useState('');
  const [mobileNavOpen,setMobileNavOpen]=useState(false);
  const [navSearch,setNavSearch]=useState('');
+ const navSearchRef=useRef<HTMLInputElement>(null);
  useEffect(()=>{setMobileNavOpen(false);setNavSearch('');},[pathname]);
+ useEffect(()=>{const onShortcut=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();navSearchRef.current?.focus();}};window.addEventListener('keydown',onShortcut);return()=>window.removeEventListener('keydown',onShortcut);},[]);
  const navResults=sections.filter(s=>s.label.toLowerCase().includes(navSearch.toLowerCase()));
 
  const schoolToday=dateForSchool(school?.timezone||'America/Chicago');
@@ -227,10 +229,11 @@ export default function SharedWorkspace({initialSection}:{initialSection?:Sectio
  </aside>
  <main className="pilot-main">
   <header className="pilot-topbar"><div className="pilot-topbar-left"><button className="pilot-menu-button" onClick={()=>setMobileNavOpen(true)} aria-label="Open navigation"><Menu size={19}/></button><div className="pilot-breadcrumb"><span>Workspace</span><ChevronRight size={14}/><b>{title}</b></div></div>
-   <div className="pilot-topbar-right"><label className="pilot-nav-search"><Search size={16}/><input aria-label="Find a page" placeholder="Jump to a page…" value={navSearch} onChange={e=>setNavSearch(e.target.value)}/><kbd>⌘ K</kbd></label>{navSearch&&<div className="pilot-search-results">{navResults.length?navResults.map(item=><button key={item.id} onClick={()=>{router.push(item.id==='overview'?'/app':'/'+item.id);setNavSearch('');}}><item.icon size={15}/>{item.label}<ChevronRight size={13}/></button>):<span>No matching pages</span>}</div>}<span className="pilot-top-date">{new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}</span><span className="pilot-top-avatar">{role.slice(0,1).toUpperCase()||'P'}</span></div>
+   <div className="pilot-topbar-right"><label className="pilot-nav-search"><Search size={16}/><input ref={navSearchRef} aria-label="Find a page" placeholder="Jump to a page…" value={navSearch} onChange={e=>setNavSearch(e.target.value)}/><kbd>⌘ K</kbd></label>{navSearch&&<div className="pilot-search-results">{navResults.length?navResults.map(item=><button key={item.id} onClick={()=>{router.push(item.id==='overview'?'/app':'/'+item.id);setNavSearch('');}}><item.icon size={15}/>{item.label}<ChevronRight size={13}/></button>):<span>No matching pages</span>}</div>}<span className="pilot-top-date">{new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})}</span><span className="pilot-top-avatar">{role.slice(0,1).toUpperCase()||'P'}</span></div>
   </header>
   <div className="pilot-content">{error&&<div role="alert" className="pilot-alert pilot-alert-error">{error}</div>}{notice&&<div role="status" className="pilot-alert pilot-alert-success"><Check size={15}/>{notice}</div>}
    {loading?<div className="pilot-loading"><span className="pilot-spinner"/><b>Loading your school workspace</b><small>Getting everything ready…</small></div>:!schoolId?<div className="pilot-empty-state">No active school membership was found. Contact a school administrator.</div>:<div className="pilot-page-enter" key={current}>
+    <>
    {current==='overview'&&<>{heading('A live view of the records shared across your school.')}<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))',gap:12,marginBottom:17}}>{[
     ['Active students',activeStudents.length],['Staff profiles',staff.filter(x=>x.status==='active').length],['Classes',classes.filter(x=>x.status==='active').length],['Today present',todayAttendance.filter(x=>x.status==='present').length],['Announcements',announcements.filter(x=>x.status==='published').length]
    ].map(([label,value])=><div key={String(label)} style={cardCss}><small style={{color:'#8490a2'}}>{label}</small><b style={{display:'block',fontSize:28,marginTop:7,fontVariantNumeric:'tabular-nums'}}>{value}</b></div>)}</div><LivePassCenter/><div style={{...cardCss,marginTop:15}}><h2 style={{fontSize:16,margin:'0 0 12px'}}>Upcoming school events</h2>{events.filter(e=>e.status==='scheduled'&&new Date(e.starts_at)>=new Date()).slice(0,5).map(e=><div key={e.id} style={{padding:'10px 0',borderTop:'1px solid #eff1f5',display:'flex',justifyContent:'space-between',gap:12}}><b style={{fontSize:12}}>{e.title}</b><span style={{fontSize:11,color:'#778398'}}>{dateLabel(e.starts_at)}</span></div>)}{!events.length&&<p style={{color:'#8993a4',fontSize:12}}>No upcoming events have been added.</p>}</div></>}
