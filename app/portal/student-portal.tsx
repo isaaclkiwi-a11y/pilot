@@ -45,7 +45,7 @@ export default function StudentPortal(){
    db.from('attendance_records').select('id,attendance_date,status').eq('school_id',schoolId).order('attendance_date',{ascending:false}).limit(30)
   ]);
   const failed=[studentR,schoolR,classR,periodR,meetingR,scheduleR,passR,announceR,attendanceR].find(x=>x.error);
-  if(failed){setError(failed.error.message);setLoading(false);return;}
+  if(failed?.error){setError(failed.error.message);setLoading(false);return;}
   if(!studentR.data){setError('Your student profile is not linked to this account yet. Please contact your school office.');setLoading(false);return;}
   setStudent(studentR.data);setSchoolName(schoolR.data?.name||'Your school');setTimezone(schoolR.data?.timezone||'America/Chicago');
   setClasses(classR.data||[]);setPeriods(periodR.data||[]);setMeetings(meetingR.data||[]);setSchedules(scheduleR.data||[]);
