@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, FileSpreadsheet, Plus, Search, Upload, Users, X } from "lucide-react";
 
 type Student = { id: string; name: string; grade: string; homeroom: string };
@@ -32,7 +32,7 @@ export default function StudentsPage() {
     { id: "10024", name: "Sofia Garcia", grade: "12th", homeroom: "Library" },
     { id: "10025", name: "Ethan Brooks", grade: "10th", homeroom: "Room 205" },
   ]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState("");\n  const [loaded, setLoaded] = useState(false);\n  useEffect(() => { try { const saved = localStorage.getItem("pilot-demo-roster"); if (saved) setStudents(JSON.parse(saved)); } catch {} setLoaded(true); }, []);\n  useEffect(() => { if (loaded) localStorage.setItem("pilot-demo-roster", JSON.stringify(students)); }, [students, loaded]);
   const [csvRows, setCsvRows] = useState<string[][]>([]);
   const [fileName, setFileName] = useState("");
   const [columns, setColumns] = useState({ name: "", id: "", grade: "", homeroom: "" });
