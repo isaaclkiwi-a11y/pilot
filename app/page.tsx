@@ -33,7 +33,9 @@ function Status({status}:{status:PassStatus}) {
 }
 
 export default function Home() {
-  const [passes,setPasses] = useState(initialPasses);\n  const [rosterOptions,setRosterOptions] = useState([{id:"10021",name:"Jordan Mitchell",grade:"10th"},{id:"10022",name:"Ava Thompson",grade:"11th"},{id:"10023",name:"Noah Williams",grade:"9th"},{id:"10024",name:"Sofia Garcia",grade:"12th"},{id:"10025",name:"Ethan Brooks",grade:"10th"}]);\n  useEffect(()=>{try{const saved=localStorage.getItem("pilot-demo-roster");if(saved){const parsed=JSON.parse(saved);setRosterOptions(parsed.filter((s:{status?:string})=>s.status!==\"Archived\"));}}catch{}},[]);
+  const [passes,setPasses] = useState(initialPasses);
+  const [rosterOptions,setRosterOptions] = useState([{id:"10021",name:"Jordan Mitchell",grade:"10th"},{id:"10022",name:"Ava Thompson",grade:"11th"},{id:"10023",name:"Noah Williams",grade:"9th"},{id:"10024",name:"Sofia Garcia",grade:"12th"},{id:"10025",name:"Ethan Brooks",grade:"10th"}]);
+  useEffect(()=>{try{const saved=localStorage.getItem("pilot-demo-roster");if(saved){const parsed=JSON.parse(saved);setRosterOptions(parsed.filter((s:{status?:string})=>s.status!=="Archived"));}}catch{}},[]);
   const [activeNav,setActiveNav] = useState("Overview");
   const [query,setQuery] = useState("");
   const [filter,setFilter] = useState("All passes");
@@ -54,7 +56,7 @@ export default function Home() {
   function approve(id:number){setPasses(old=>old.map(p=>p.id===id?{...p,status:"Active"}:p));toast("Pass approved");}
   function deny(id:number){setPasses(old=>old.filter(p=>p.id!==id));toast("Pass denied");}
   function returned(id:number){setPasses(old=>old.map(p=>p.id===id?{...p,status:"Returned"}:p));toast("Student marked as returned");}
-  function createPass(e:React.FormEvent){e.preventDefault();const selected=rosterOptions.find(s=>s.name===student);if(!selected)return;setPasses(old=>[{id:Math.max(0,...old.map(p=>p.id))+1,student:selected.name,initials:selected.name.split(/\\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase(),grade:selected.grade,from:(selected as {homeroom?:string}).homeroom||"Classroom",to:destination,reason,time:"Just now",duration:Number(limit),status:"Pending"},...old]);setStudent("");setModal(false);toast("Pass request created");}
+  function createPass(e:React.FormEvent){e.preventDefault();const selected=rosterOptions.find(s=>s.name===student);if(!selected)return;setPasses(old=>[{id:Math.max(0,...old.map(p=>p.id))+1,student:selected.name,initials:selected.name.split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase(),grade:selected.grade,from:(selected as {homeroom?:string}).homeroom||"Classroom",to:destination,reason,time:"Just now",duration:Number(limit),status:"Pending"},...old]);setStudent("");setModal(false);toast("Pass request created");}
 
   const activeCount=passes.filter(p=>p.status==="Active"||p.status==="Overdue").length;
   const pending=passes.filter(p=>p.status==="Pending");
