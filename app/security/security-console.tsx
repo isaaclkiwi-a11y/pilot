@@ -82,7 +82,7 @@ export default function SecurityConsole({schoolName,role}:{schoolName:string;rol
      {label:'Active passes',value:active.length,icon:<DoorOpen size={18}/>},
      {label:'Overdue passes',value:overdue.length,icon:<AlertCircle size={18}/>},
      {label:'Pending requests',value:passes.filter(p=>p.status==='pending').length,icon:<Clock3 size={18}/>},
-     {label:'Recently ended',value:passes.filter(p=>p.status==='returned').length,icon:<CheckCircle2 size={18}/>}
+     {label:'Returned passes',value:passes.filter(p=>p.status==='returned').length,icon:<CheckCircle2 size={18}/>}
     ].map(card=><div key={card.label} style={{background:'#fff',border:'1px solid #e6e9f0',borderRadius:13,padding:17}}>
      <div style={{display:'flex',justifyContent:'space-between',color:'#7b879a',fontSize:12}}>{card.label}<span style={{color:'#536bc8'}}>{card.icon}</span></div>
      <strong style={{display:'block',fontSize:28,marginTop:9}}>{card.value}</strong>
@@ -110,7 +110,7 @@ export default function SecurityConsole({schoolName,role}:{schoolName:string;rol
        <td style={{padding:'13px 9px',fontSize:12,color:'#33415b',borderBottom:'1px solid #f0f2f6'}}><strong>{p.destination}</strong><small style={{display:'block',color:'#8b95a5',marginTop:3}}>{p.reason||'No reason provided'}</small></td>
        <td style={{padding:'13px 9px',fontSize:11,color:'#657188',borderBottom:'1px solid #f0f2f6'}}>{dateTime(p.requested_at)}</td>
        <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}><span style={{display:'inline-flex',padding:'5px 8px',borderRadius:6,fontSize:10,fontWeight:700,background:isOverdue(p)?'#fff0ed':p.status==='active'?'#edf8f1':'#f1f3f7',color:isOverdue(p)?'#c15d4e':p.status==='active'?'#3b9467':'#6f7a8e'}}>{isOverdue(p)?'Overdue':p.status}</span></td>
-       <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}>{p.status==='active'?<button onClick={()=>void endPass(p)} disabled={busyId===p.pass_id} style={{border:0,borderRadius:7,padding:'7px 10px',background:'#fff0ee',color:'#b64d42',fontSize:11,fontWeight:700,opacity:busyId===p.pass_id?.5:1}}>{busyId===p.pass_id?'Ending…':'End pass'}</button>:<span style={{color:'#a0a8b5',fontSize:10}}>No action</span>}</td>
+       <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}>{p.status==='active'?<button onClick={()=>void endPass(p)} disabled={busyId===p.pass_id} style={{border:0,borderRadius:7,padding:'7px 10px',background:'#fff0ee',color:'#b64d42',fontSize:11,fontWeight:700,opacity:busyId===p.pass_id ? 0.5 : 1}}>{busyId===p.pass_id?'Ending…':'End pass'}</button>:<span style={{color:'#a0a8b5',fontSize:10}}>No action</span>}</td>
       </tr>)}</tbody>
      </table></div>}
    </section>
