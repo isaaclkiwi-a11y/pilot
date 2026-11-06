@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="auth-page"><section className="auth-card"><p className="auth-intro">Verifying your invitation…</p></section></main>;}
