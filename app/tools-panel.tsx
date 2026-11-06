@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useMemo,useState} from 'react';
 import {createClient} from '@/lib/supabase/client';
-import {Activity,ArrowUpRight,BookOpen,CalendarDays,Check,ClipboardList,Clock3,Download,FileText,MapPin,Plus,Search,Shield,Trash2,Users,Utensils,UserRound,Settings2,Monitor,Timer,Building2,IdCard,Palette,Radio,DoorOpen} from 'lucide-react';
+import {Activity,ArrowUpRight,BookOpen,CalendarDays,Check,ClipboardList,Clock3,Download,FileText,MapPin,Plus,Search,Shield,Trash2,Users,Utensils,UserRound,Settings2,Monitor,Timer,Building2,IdCard,Palette,Radio,DoorOpen,RefreshCw} from 'lucide-react';
 
 type FieldDef={key:string;label:string;placeholder?:string;type?:string;options?:string[]};
 type ModuleDef={id:string;name:string;group:string;desc:string;icon:any;fields:FieldDef[]};
