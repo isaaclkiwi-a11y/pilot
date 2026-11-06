@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowDownRight, ArrowUpRight, Bell, BookOpen, CalendarDays,
   Check, ChevronDown, Clock3, Command, FileBarChart, GraduationCap,
@@ -33,7 +33,7 @@ function Status({status}:{status:PassStatus}) {
 }
 
 export default function Home() {
-  const [passes,setPasses] = useState(initialPasses);
+  const [passes,setPasses] = useState(initialPasses);\n  const [rosterOptions,setRosterOptions] = useState([{id:"10021",name:"Jordan Mitchell",grade:"10th"},{id:"10022",name:"Ava Thompson",grade:"11th"},{id:"10023",name:"Noah Williams",grade:"9th"},{id:"10024",name:"Sofia Garcia",grade:"12th"},{id:"10025",name:"Ethan Brooks",grade:"10th"}]);\n  useEffect(()=>{try{const saved=localStorage.getItem("pilot-demo-roster");if(saved){const parsed=JSON.parse(saved);setRosterOptions(parsed.filter((s:{status?:string})=>s.status!==\"Archived\"));}}catch{}},[]);
   const [activeNav,setActiveNav] = useState("Overview");
   const [query,setQuery] = useState("");
   const [filter,setFilter] = useState("All passes");
@@ -94,7 +94,7 @@ export default function Home() {
         <div className="prototype-note"><ShieldCheck size={15}/> Pilot is a prototype. All displayed student records are fictional sample data.</div>
       </div>
     </section>
-    {modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setModal(false)}}><form className="modal" onSubmit={createPass}><div className="modal-heading"><div><span className="eyebrow">NEW REQUEST</span><h2>Create a hall pass</h2><p>Enter the details to create a student pass.</p></div><button type="button" className="icon-button" onClick={()=>setModal(false)}><X size={18}/></button></div><label>Choose student<select autoFocus value={student} onChange={e=>setStudent(e.target.value)} required><option value="">Select a student from the roster</option>{[{id:"10021",name:"Jordan Mitchell",grade:"10th"},{id:"10022",name:"Ava Thompson",grade:"11th"},{id:"10023",name:"Noah Williams",grade:"9th"},{id:"10024",name:"Sofia Garcia",grade:"12th"},{id:"10025",name:"Ethan Brooks",grade:"10th"}].map(s=><option key={s.id} value={s.name}>{s.name} · {s.grade} · {s.id}</option>)}</select></label><label>Destination<select value={destination} onChange={e=>setDestination(e.target.value)}><option>Restroom</option><option>Main Office</option><option>Counseling</option><option>Nurse</option><option>Library</option></select></label><label>Reason<select value={reason} onChange={e=>setReason(e.target.value)}><option>Restroom</option><option>Counselor visit</option><option>Office visit</option><option>Nurse visit</option><option>Other</option></select></label><label>Time limit<select value={limit} onChange={e=>setLimit(e.target.value)}><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option></select></label><div className="modal-actions"><button type="button" className="secondary-button" onClick={()=>setModal(false)}>Cancel</button><button className="primary-button" type="submit"><Plus size={16}/> Create pass</button></div></form></div>}
+    {modal&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setModal(false)}}><form className="modal" onSubmit={createPass}><div className="modal-heading"><div><span className="eyebrow">NEW REQUEST</span><h2>Create a hall pass</h2><p>Enter the details to create a student pass.</p></div><button type="button" className="icon-button" onClick={()=>setModal(false)}><X size={18}/></button></div><label>Choose student<select autoFocus value={student} onChange={e=>setStudent(e.target.value)} required><option value="">Select a student from the roster</option>{rosterOptions.map(s=><option key={s.id} value={s.name}>{s.name} · {s.grade} · {s.id}</option>)}</select></label><label>Destination<select value={destination} onChange={e=>setDestination(e.target.value)}><option>Restroom</option><option>Main Office</option><option>Counseling</option><option>Nurse</option><option>Library</option></select></label><label>Reason<select value={reason} onChange={e=>setReason(e.target.value)}><option>Restroom</option><option>Counselor visit</option><option>Office visit</option><option>Nurse visit</option><option>Other</option></select></label><label>Time limit<select value={limit} onChange={e=>setLimit(e.target.value)}><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option></select></label><div className="modal-actions"><button type="button" className="secondary-button" onClick={()=>setModal(false)}>Cancel</button><button className="primary-button" type="submit"><Plus size={16}/> Create pass</button></div></form></div>}
     {notice&&<div className="toast"><CheckCircle2 size={17}/>{notice}</div>}
   </main>;
 }
