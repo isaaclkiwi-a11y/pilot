@@ -54,7 +54,7 @@ export default function Home() {
   function approve(id:number){setPasses(old=>old.map(p=>p.id===id?{...p,status:"Active"}:p));toast("Pass approved");}
   function deny(id:number){setPasses(old=>old.filter(p=>p.id!==id));toast("Pass denied");}
   function returned(id:number){setPasses(old=>old.map(p=>p.id===id?{...p,status:"Returned"}:p));toast("Student marked as returned");}
-  function createPass(e:React.FormEvent){e.preventDefault();if(!student.trim())return;setPasses(old=>[{id:Math.max(0,...old.map(p=>p.id))+1,student:student.trim(),initials:student.trim().split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase(),grade:"—",from:"Classroom",to:destination,reason,time:"Just now",duration:Number(limit),status:"Pending"},...old]);setStudent("");setModal(false);toast("Pass request created");}
+  function createPass(e:React.FormEvent){e.preventDefault();const selected=rosterOptions.find(s=>s.name===student);if(!selected)return;setPasses(old=>[{id:Math.max(0,...old.map(p=>p.id))+1,student:selected.name,initials:selected.name.split(/\\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase(),grade:selected.grade,from:(selected as {homeroom?:string}).homeroom||"Classroom",to:destination,reason,time:"Just now",duration:Number(limit),status:"Pending"},...old]);setStudent("");setModal(false);toast("Pass request created");}
 
   const activeCount=passes.filter(p=>p.status==="Active"||p.status==="Overdue").length;
   const pending=passes.filter(p=>p.status==="Pending");
