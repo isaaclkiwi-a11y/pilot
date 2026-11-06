@@ -51,7 +51,7 @@ function useSchoolDayData(schoolId:string,userId:string){
   ]);
   if(schoolR.data?.timezone)setTimezone(schoolR.data.timezone);
   const fail=[scheduleR,periodR,classR,meetingR,assignmentR,membershipR,profileR,coverageR].find(x=>x.error);
-  if(fail){setError(fail.error.message);setLoading(false);return;}
+  if(fail?.error){setError(fail.error.message);setLoading(false);return;}
   const profileMap=new Map((profileR.data||[]).map((p:any)=>[p.user_id,p.display_name||'Staff member']));
   const members=(membershipR.data||[]).map((m:any)=>({user_id:m.user_id,role:m.role,display_name:profileMap.get(m.user_id)||'Staff member'}));
   const memberNames=new Map<string,string>();members.forEach(m=>memberNames.set(m.user_id,m.display_name));profileMap.forEach((name:any,id:string)=>memberNames.set(id,String(name||'Staff member')));
