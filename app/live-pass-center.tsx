@@ -29,6 +29,7 @@ export default function LivePassCenter(){
  const [role,setRole]=useState('');
  const [schoolId,setSchoolId]=useState('');
  const [serverOffset,setServerOffset]=useState(0);
+ const [actorId,setActorId]=useState('');
  const [now,setNow]=useState(Date.now());
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState('');
@@ -48,6 +49,7 @@ export default function LivePassCenter(){
   const requestStarted=Date.now();
   const {data:{user},error:userError}=await db.auth.getUser();
   if(userError||!user){setError('Your session could not be verified. Please sign in again.');setLoading(false);return;}
+  setActorId(user.id);
   const [monitor,time,members,studentList]=await Promise.all([
    db.rpc('get_school_hall_pass_monitor'),
    db.rpc('get_pilot_server_time'),
@@ -97,13 +99,14 @@ export default function LivePassCenter(){
  }
  async function setStatus(pass:PassRow,status:'active'|'denied'|'returned'){
   setBusy(pass.pass_id);setError('');setNotice('');
-  const {error}=await db.from('hall_passes').update({status}).eq('id',pass.pass_id);
+  const update=status==='returned'?{status,returned_at:new Date().toISOString(),ended_at:new Date().toISOString(),ended_by:actorId,end_reason:'Ended by staff'}:{status};
+  const {error}=await db.from('hall_passes').update(update).eq('id',pass.pass_id);
   if(error)setError(error.message);
-  else{setNotice(status==='active'?'Pass approved. Its shared countdown has started.':status==='returned'?'Pass marked returned.':'Pass denied.');await load();}
+  else{setNotice(status==='active'?'Pass approved. Its shared countdown has started.':status==='returned'?'Pass ended.':'Pass denied.');await load();}
   setBusy('');
  }
  const canRequest=role!=='security'&&students.length>0;
- const canManage=['owner','school_admin','staff_admin','teacher','staff'].includes(role);
+ const canManage=['owner','school_admin','staff_admin','teacher','staff','substitute'].includes(role);
  return <section style={{background:'#fff',border:'1px solid #e5e9f1',borderRadius:16,padding:20,boxShadow:'0 8px 28px rgba(25,40,75,.04)'}}>
   <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:14,flexWrap:'wrap',marginBottom:18}}>
    <div><div style={{display:'flex',alignItems:'center',gap:8,color:'#5369c5',fontSize:11,fontWeight:800,letterSpacing:1}}><DoorOpen size={16}/> LIVE SCHOOL SYSTEM</div><h2 style={{fontSize:21,margin:'7px 0 4px'}}>Hall pass monitor</h2><p style={{fontSize:12,color:'#7b879a',margin:0}}>Shared across authorized accounts · countdown starts when a pass is approved</p></div>
@@ -122,7 +125,7 @@ export default function LivePassCenter(){
   </form>}
   <div style={{display:'flex',gap:9,flexWrap:'wrap',marginBottom:14}}>
    <input aria-label="Search hall passes" placeholder="Search student or destination…" value={query} onChange={e=>setQuery(e.target.value)} style={{...inputStyle,flex:'1 1 230px'}}/>
-   <select aria-label="Filter hall passes" value={filter} onChange={e=>setFilter(e.target.value)} style={{...inputStyle,width:'auto'}}><option value="active">Active + overdue</option><option value="pending">Pending</option><option value="returned">Returned</option><option value="denied">Denied</option><option value="cancelled">Cancelled</option><option value="all">All passes</option></select>
+   <select aria-label="Filter hall passes" value={filter} onChange={e=>setFilter(e.target.value)} style={{...inputStyle,width:'auto'}}><option value="active">Active + overdue</option><option value="pending">Pending</option><option value="returned">Ended</option><option value="denied">Denied</option><option value="cancelled">Cancelled</option><option value="all">All passes</option></select>
   </div>
   {error&&<div role="alert" style={{padding:11,borderRadius:9,background:'#fff1f0',color:'#ad3931',fontSize:12,marginBottom:12}}>{error}</div>}
   {notice&&<div role="status" style={{padding:11,borderRadius:9,background:'#eff8f2',color:'#28734c',fontSize:12,marginBottom:12}}>{notice}</div>}
@@ -132,8 +135,8 @@ export default function LivePassCenter(){
     <td style={tdStyle}>{p.origin||'—'}</td><td style={tdStyle}><b>{p.destination}</b><small style={smallStyle}>{p.reason||'No reason entered'}</small></td>
     <td style={tdStyle}>{fmtDate(p.requested_at)}</td>
     <td style={{...tdStyle,fontVariantNumeric:'tabular-nums',fontWeight:800,color:p.display_status==='overdue'?'#c04e42':p.status==='active'?'#327c58':'#69758a'}}>{timer(p,serverNow)}</td>
-    <td style={tdStyle}><span style={statusStyle(p.display_status)}>{p.display_status.toUpperCase()}</span></td>
-    <td style={tdStyle}><div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{canManage&&p.status==='pending'&&<><button disabled={!!busy} onClick={()=>void setStatus(p,'active')} style={buttonStyle('good')}><Check size={13}/> Approve</button><button disabled={!!busy} onClick={()=>void setStatus(p,'denied')} style={buttonStyle('danger')}><X size={13}/> Deny</button></>}{canManage&&p.status==='active'&&<button disabled={!!busy} onClick={()=>void setStatus(p,'returned')} style={buttonStyle('secondary')}>Mark returned</button>}</div></td>
+    <td style={tdStyle}><span style={statusStyle(p.display_status)}>{p.display_status==='returned'?'ENDED':p.display_status.toUpperCase()}</span></td>
+    <td style={tdStyle}><div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{canManage&&p.status==='pending'&&<><button disabled={!!busy} onClick={()=>void setStatus(p,'active')} style={buttonStyle('good')}><Check size={13}/> Approve</button><button disabled={!!busy} onClick={()=>void setStatus(p,'denied')} style={buttonStyle('danger')}><X size={13}/> Deny</button></>}{canManage&&p.status==='active'&&<button disabled={!!busy} onClick={()=>void setStatus(p,'returned')} style={buttonStyle('secondary')}>End pass</button>}</div></td>
    </tr>)}</tbody></table></div>}
   <p style={{display:'flex',alignItems:'center',gap:7,fontSize:11,color:'#8490a2',margin:'14px 0 0'}}><Clock3 size={14}/> Countdown is synchronized to the database clock. Changes from other accounts appear through live updates.</p>
  </section>;
