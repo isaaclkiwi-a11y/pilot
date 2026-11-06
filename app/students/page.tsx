@@ -48,7 +48,7 @@ export default function StudentsPage() {
     grade: row[Number(columns.grade)] || "", homeroom: row[Number(columns.homeroom)] || "",
   })), [csvRows, columns]);
   const valid = mapped.filter(row => row.name.trim() && row.id.trim());
-  const duplicates = valid.filter(row => students.some(s => s.id.toLowerCase() === row.id.trim().toLowerCase() || s.name.toLowerCase() === row.name.trim().toLowerCase())).length;
+  const duplicates = valid.filter((row, index) => students.some(s => s.id.toLowerCase() === row.id.trim().toLowerCase() || s.name.toLowerCase() === row.name.trim().toLowerCase()) || valid.slice(0, index).some(prior => prior.id.trim().toLowerCase() === row.id.trim().toLowerCase() || prior.name.trim().toLowerCase() === row.name.trim().toLowerCase())).length;
   const visible = students.filter(s => [s.name, s.id, s.grade, s.homeroom].join(" ").toLowerCase().includes(search.toLowerCase()));
 
   function loadFile(file?: File) {
@@ -73,8 +73,15 @@ export default function StudentsPage() {
   }
 
   function importRows() {
-    const additions = valid.filter(row => !students.some(s => s.id.toLowerCase() === row.id.trim().toLowerCase() || s.name.toLowerCase() === row.name.trim().toLowerCase()))
-      .map(row => ({ id: row.id.trim(), name: row.name.trim(), grade: row.grade.trim() || "Not assigned", homeroom: row.homeroom.trim() || "Not assigned" }));
+    const seenIds = new Set(students.map(s => s.id.toLowerCase()));
+    const seenNames = new Set(students.map(s => s.name.toLowerCase()));
+    const additions: Student[] = [];
+    for (const row of valid) {
+      const id = row.id.trim(), name = row.name.trim();
+      if (seenIds.has(id.toLowerCase()) || seenNames.has(name.toLowerCase())) continue;
+      seenIds.add(id.toLowerCase()); seenNames.add(name.toLowerCase());
+      additions.push({ id, name, grade: row.grade.trim() || "Not assigned", homeroom: row.homeroom.trim() || "Not assigned" });
+    }
     setStudents(old => [...old, ...additions]);
     setCsvRows([]);
     setFileName("");
