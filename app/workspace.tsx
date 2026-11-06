@@ -6,13 +6,14 @@ import {createClient} from '@/lib/supabase/client';
 import {Announcement,Attendance,Event,Pass,PilotData,seed,Staff,Student,STORAGE_KEY} from '../lib/types';
 import ToolsPanel from './tools-panel';
 import LivePassCenter from './live-pass-center';
+import SharedWorkspace from './shared-workspace';
 type Section='overview'|'passes'|'students'|'staff'|'attendance'|'schedule'|'announcements'|'analytics'|'activity'|'settings'|'tools';
 const sections:{id:Section;label:string;icon:any;group:string}[]=[{id:'overview',label:'Overview',icon:LayoutDashboard,group:'WORKSPACE'},{id:'passes',label:'Hall passes',icon:DoorOpen,group:'WORKSPACE'},{id:'students',label:'Students',icon:GraduationCap,group:'WORKSPACE'},{id:'staff',label:'Staff directory',icon:Users,group:'WORKSPACE'},{id:'attendance',label:'Attendance',icon:ClipboardCheck,group:'SCHOOL'},{id:'schedule',label:'Schedule',icon:CalendarDays,group:'SCHOOL'},{id:'announcements',label:'Announcements',icon:BookOpen,group:'SCHOOL'},{id:'analytics',label:'Analytics',icon:BarChart3,group:'INSIGHTS'},{id:'activity',label:'Activity log',icon:Activity,group:'INSIGHTS'},{id:'settings',label:'Settings',icon:SettingsIcon,group:'INSIGHTS'},{id:'tools',label:'More features',icon:Command,group:'INSIGHTS'}];
 const uid=()=>Math.random().toString(36).slice(2,9).toUpperCase();
 const today=()=>new Date().toISOString().slice(0,10);
 function csv(text:string){const rows:string[][]=[];let row:string[]=[],cell='',q=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(q&&text[i+1]==='"'){cell+='"';i++;}else q=!q;}else if(c===','&&!q){row.push(cell.trim());cell='';}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell.trim());if(row.some(Boolean))rows.push(row);row=[];cell='';}else cell+=c;}row.push(cell.trim());if(row.some(Boolean))rows.push(row);return rows;}
 function stamp(){return new Date().toISOString();}
-export default function Workspace({initialSection}:{initialSection?:Section}){
+function LegacyWorkspace({initialSection}:{initialSection?:Section}){
  const pathname=usePathname(),router=useRouter();const pathSection=(pathname.split('/')[1]||'overview') as Section;const current=initialSection|| (sections.some(s=>s.id===pathSection)?pathSection:'overview');
  const [data,setData]=useState<PilotData>(seed);const [ready,setReady]=useState(false);const [accountEmail,setAccountEmail]=useState('');const [query,setQuery]=useState('');const [filter,setFilter]=useState('All');const [modal,setModal]=useState('');const [toast,setToast]=useState('');const [draft,setDraft]=useState<Record<string,string>>({});const [mobile,setMobile]=useState(false);
  useEffect(()=>{createClient().auth.getUser().then(({data})=>setAccountEmail(data.user?.email||''));},[]);
@@ -65,6 +66,8 @@ export default function Workspace({initialSection}:{initialSection?:Section}){
  <div className="modal-actions"><button type="button" className="secondary" onClick={()=>setModal('')}>Cancel</button><button type="submit" className="primary"><Save size={15}/> Save</button></div></form></div>}
  {toast&&<div className="toast"><CheckCircle2 size={17}/>{toast}</div>}{!ready&&<div className="loading">Loading Pilot workspace…</div>}</main>;
 }
+export default function Workspace({initialSection}:{initialSection?:Section}){return <SharedWorkspace initialSection={initialSection}/>;}
+
 const descriptions:Record<Section,string>={overview:'Here is what is happening across your campus today.',passes:'Create requests, review approvals, and track student movement.',students:'Maintain the student directory and import a roster spreadsheet.',staff:'Manage staff contacts, roles, and school assignments.',attendance:'Record daily attendance for every active student.',schedule:'Coordinate school events, meetings, and activities.',announcements:'Publish updates for your school community.',analytics:'Explore live summaries calculated from your workspace records.',activity:'Review changes made during this browser session.',settings:'Configure your school workspace and demo preferences.',tools:'Explore additional student, staff, operations, and administration modules.'};
 function Stat({label,value,icon}:{label:string;value:number;icon:React.ReactNode}){return <div className="stat"><div className="stat-top"><span>{label}</span><i>{icon}</i></div><b>{value}</b><small>Current workspace records</small></div>}
 function Panel({title,subtitle,children}:{title:string;subtitle:string;children:React.ReactNode}){return <section className="panel"><div className="panel-head"><div><h2>{title}</h2><p>{subtitle}</p></div></div>{children}</section>}
