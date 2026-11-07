@@ -17,8 +17,11 @@ begin
  if not found then raise exception 'This invitation is invalid, expired, already used, or belongs to a different email address';end if;
  if exists(select 1 from public.school_memberships sm where sm.school_id=v_invite.school_id and sm.user_id=v_user_id) then raise exception 'This account is already a member of this school';end if;
  insert into public.school_memberships(school_id,user_id,role,status) values(v_invite.school_id,v_user_id,v_invite.role,'active');
- update public.school_staff_profiles set display_name=coalesce(nullif(btrim(v_invite.display_name),''),display_name),job_title=v_invite.role,status='active',updated_at=now()
-  where school_id=v_invite.school_id and user_id=v_user_id;
+ insert into public.school_staff_profiles(school_id,user_id,display_name,job_title,status,created_by,updated_at)
+ values(v_invite.school_id,v_user_id,coalesce(nullif(btrim(v_invite.display_name),''),v_email),v_invite.role,'active',v_invite.invited_by,now())
+ on conflict(school_id,user_id) do update set
+  display_name=coalesce(nullif(btrim(excluded.display_name),''),public.school_staff_profiles.display_name),
+  job_title=excluded.job_title,status='active',updated_at=now();
  update public.staff_invites set accepted_at=now() where id=v_invite.id;
  return query select v_invite.school_id,v_invite.role;
 end;$function$;
@@ -32,7 +35,8 @@ begin
  select school_id into v_school_id from public.hall_passes where id=p_pass_id for update;
  if v_school_id is null then raise exception 'Pass not found' using errcode='P0002';end if;
  if not private.has_school_role(v_school_id,array['security']::text[]) then raise exception 'Security role required for this school' using errcode='42501';end if;
- update public.hall_passes set status='active' where id=p_pass_id and school_id=v_school_id and status='pending' returning * into v_pass;
+ update public.hall_passes set status='active',approved_by=v_user_id,approved_at=now(),updated_at=now()
+ where id=p_pass_id and school_id=v_school_id and status='pending' returning * into v_pass;
  if not found then raise exception 'Only pending passes can be approved' using errcode='22023';end if;
  return v_pass;
 end;$function$;
@@ -131,6 +135,8 @@ begin
  where c.token_hash=encode(extensions.digest(convert_to(p_token,'UTF8'),'sha256'),'hex') and c.revoked_at is null and (c.expires_at is null or c.expires_at>now()) and s.status='active'
  order by c.created_at desc limit 1;
  if v_email is null then raise exception 'Invalid or expired student QR credential';end if;
+ update public.student_qr_credentials set last_used_at=now()
+ where token_hash=encode(extensions.digest(convert_to(p_token,'UTF8'),'sha256'),'hex') and revoked_at is null;
  return v_email;
 end;$function$;
 revoke all on function private.get_student_qr_login_email(text) from public,anon,authenticated;
