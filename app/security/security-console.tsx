@@ -63,6 +63,12 @@ export default function SecurityConsole({schoolName,role}:{schoolName:string;rol
   return matchesStatus&&matchesQuery;
  });
 
+ async function approvePass(pass:PassRow){
+  setBusyId(pass.pass_id);setError('');setNotice('');
+  const {error}=await db.rpc('security_approve_hall_pass',{p_pass_id:pass.pass_id});
+  if(error)setError(error.message);else{setNotice('Pass approved. The countdown has started and the approval is recorded.');await load();}
+  setBusyId('');
+ }
  async function endPass(pass:PassRow){
   const reason=window.prompt('Why is security ending this pass?','Ended by school security');
   if(reason===null)return;
@@ -121,7 +127,7 @@ export default function SecurityConsole({schoolName,role}:{schoolName:string;rol
        <td style={{padding:'13px 9px',fontSize:11,color:'#657188',borderBottom:'1px solid #f0f2f6'}}>{dateTime(p.requested_at)}</td>
        <td style={{padding:'13px 9px',fontSize:12,fontWeight:800,fontVariantNumeric:'tabular-nums',color:isOverdue(p,serverNow)?'#c15d4e':'#327c58',borderBottom:'1px solid #f0f2f6'}}>{countdown(p,serverNow)}</td>
        <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}><span style={{display:'inline-flex',padding:'5px 8px',borderRadius:6,fontSize:10,fontWeight:700,background:isOverdue(p,serverNow)?'#fff0ed':p.status==='active'?'#edf8f1':'#f1f3f7',color:isOverdue(p,serverNow)?'#c15d4e':p.status==='active'?'#3b9467':'#6f7a8e'}}>{isOverdue(p,serverNow)?'Overdue':p.status}</span></td>
-       <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}>{p.status==='active'?<button onClick={()=>void endPass(p)} disabled={busyId===p.pass_id} style={{border:0,borderRadius:7,padding:'7px 10px',background:'#fff0ee',color:'#b64d42',fontSize:11,fontWeight:700,opacity:busyId===p.pass_id ? 0.5 : 1}}>{busyId===p.pass_id?'Ending…':'End pass'}</button>:<span style={{color:'#a0a8b5',fontSize:10}}>No action</span>}</td>
+       <td style={{padding:'13px 9px',borderBottom:'1px solid #f0f2f6'}}>{p.status==='pending'?<button onClick={()=>void approvePass(p)} disabled={busyId===p.pass_id} style={{border:0,borderRadius:7,padding:'7px 10px',background:'#edf8f1',color:'#28734c',fontSize:11,fontWeight:700,opacity:busyId===p.pass_id ? 0.5 : 1}}>{busyId===p.pass_id?'Approving…':'Approve pass'}</button>:p.status==='active'?<button onClick={()=>void endPass(p)} disabled={busyId===p.pass_id} style={{border:0,borderRadius:7,padding:'7px 10px',background:'#fff0ee',color:'#b64d42',fontSize:11,fontWeight:700,opacity:busyId===p.pass_id ? 0.5 : 1}}>{busyId===p.pass_id?'Ending…':'End pass'}</button>:<span style={{color:'#a0a8b5',fontSize:10}}>No action</span>}</td>
       </tr>)}</tbody>
      </table></div>}
    </section>
