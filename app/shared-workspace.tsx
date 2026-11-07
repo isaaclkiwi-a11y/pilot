@@ -5,10 +5,9 @@ import {usePathname,useRouter} from 'next/navigation';
 import {Activity,BookOpen,CalendarDays,Check,ClipboardCheck,Clock3,DoorOpen,Download,GraduationCap,LayoutDashboard,LogOut,Plus,RefreshCw,Settings,ShieldCheck,Trash2,Users,UserCog,Upload,Command,BarChart3,Menu,X,Search,ChevronRight} from 'lucide-react';
 import {createClient} from '@/lib/supabase/client';
 import LivePassCenter from './live-pass-center';
-import ToolsPanel from './tools-panel';
 import SchoolDayTools,{CurrentClassCard} from './school-day-tools';
 
-type Section='overview'|'passes'|'students'|'staff'|'classes'|'attendance'|'schedule'|'bells'|'substitutes'|'announcements'|'analytics'|'activity'|'settings'|'tools';
+type Section='overview'|'passes'|'students'|'staff'|'classes'|'attendance'|'schedule'|'bells'|'substitutes'|'announcements'|'analytics'|'activity'|'settings';
 type Student={id:string;student_number:string|null;first_name:string;last_name:string;grade_level:string|null;homeroom:string|null;status:string};
 type Staff={id:string;user_id:string;display_name:string|null;job_title:string|null;room:string|null;status:string};
 type School={id:string;name:string;timezone:string;status:string};
@@ -31,7 +30,6 @@ const sections:{id:Section;label:string;icon:any;group:string}[]=[
  {id:'analytics',label:'Analytics',icon:BarChart3,group:'INSIGHTS'},
  {id:'activity',label:'Audit history',icon:Activity,group:'INSIGHTS'},
  {id:'settings',label:'School settings',icon:Settings,group:'INSIGHTS'},
- {id:'tools',label:'More features',icon:Command,group:'INSIGHTS'}
 ];
 const dateForSchool=(timezone:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const inputCss:React.CSSProperties={width:'100%',boxSizing:'border-box',border:'1px solid #dfe4ed',borderRadius:9,padding:'10px 11px',background:'#fff',color:'#26334b',fontSize:13,minHeight:40};
@@ -255,7 +253,6 @@ export default function SharedWorkspace({initialSection}:{initialSection?:Sectio
    ].map(([label,value])=><div key={String(label)} style={cardCss}><small style={{color:'#8490a2'}}>{label}</small><b style={{display:'block',fontSize:28,marginTop:8}}>{value}</b></div>)}</div></>}
    {current==='activity'&&<>{heading(isAdmin?'Audit history of changes to school records.':'Recent shared school activity is available to administrators.')}<div style={{...cardCss,overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse',minWidth:650}}>{tableHead(['EVENT','RECORD','RECORD ID','WHEN'])}<tbody>{audit.map(a=><tr key={a.id}><td style={cell}>{a.event_type}</td><td style={cell}>{a.target_type||'—'}</td><td style={cell}>{a.target_id||'—'}</td><td style={cell}>{dateLabel(a.created_at)}</td></tr>)}</tbody></table>{!audit.length&&<p style={{padding:18,color:'#8a95a5',fontSize:12}}>{isAdmin?'No audit records yet.':'Audit history is restricted to school administrators.'}</p>}</div></>}
    {current==='settings'&&<>{heading('Manage your school name and time zone.')}<form onSubmit={saveSchool} style={{...cardCss,maxWidth:620,display:'grid',gap:13}}><label style={fieldCss}>School name<input value={form.schoolName??school?.name??''} onChange={e=>updateForm('schoolName',e.target.value)} disabled={!isAdmin} style={inputCss}/></label><label style={fieldCss}>Time zone<select value={form.timezone??school?.timezone??'America/Chicago'} onChange={e=>updateForm('timezone',e.target.value)} disabled={!isAdmin} style={inputCss}>{['America/Chicago','America/New_York','America/Denver','America/Los_Angeles','America/Phoenix','America/Anchorage','Pacific/Honolulu'].map(x=><option key={x}>{x}</option>)}</select></label>{isAdmin?<button disabled={busy} style={{...buttonCss(true),justifySelf:'start'}}>Save school settings</button>:<p style={{fontSize:11,color:'#8792a3'}}>Only school administrators can edit these settings.</p>}</form></>}
-   {current==='tools'&&<ToolsPanel/>}
    </>
    </div>}
   </div>
