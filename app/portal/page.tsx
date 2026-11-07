@@ -1,0 +1,2 @@
+import {redirect} from 'next/navigation';import {requirePilotMember} from '@/lib/auth';import StudentPortal from './student-portal';
+export default async function PortalPage(){const {membership}=await requirePilotMember();if(membership.role!=='student')redirect('/app');return <StudentPortal/>;}
